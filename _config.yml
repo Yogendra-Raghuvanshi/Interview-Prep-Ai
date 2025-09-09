@@ -1,11 +1,11 @@
 # _config.yml
 
 # Site settings
-title: "Your Project Name"
-email: "your-email@example.com"
+title: "Interview-Prep-Ai"
+email: "yogendrasinghraghuvanshi75@gmail.com.com"
 description: "A short description of your project"
-baseurl: "" # leave empty unless your site is hosted in a subfolder
-url: "https://your-username.github.io"
+baseurl: "/Interview-Prep-Ai" # leave empty unless your site is hosted in a subfolder
+url: "https://yogendra-raghuvanshi.github.io"
 
 # Markdown processor
 markdown: kramdown
