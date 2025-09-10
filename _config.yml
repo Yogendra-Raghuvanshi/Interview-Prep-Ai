@@ -1,19 +1,13 @@
 # _config.yml
-
-# Site settings
 title: "Interview-Prep-Ai"
-email: "yogendrasinghraghuvanshi75@gmail.com.com"
+email: "yogendrasinghraghuvanshi75@gmail.com"
 description: "A short description of your project"
-baseurl: "/Interview-Prep-Ai" # leave empty unless your site is hosted in a subfolder
+baseurl: "/Interview-Prep-Ai"
 url: "https://yogendra-raghuvanshi.github.io"
 
-# Markdown processor
 markdown: kramdown
-
-# Theme
 theme: jekyll-theme-primer
 
-# Plugins (GitHub Pages compatible)
 plugins:
   - jekyll-seo-tag
   - jekyll-feed
@@ -25,7 +19,6 @@ plugins:
   - jekyll-relative-links
   - jekyll-titles-from-headings
 
-# Exclude unnecessary files/folders
 exclude:
   - node_modules
   - backend/node_modules
@@ -38,6 +31,8 @@ exclude:
   - package.json
   - .gitignore
   - .github
+  - backend
+  - tmp
+  - log
 
-# Optional: Enable future posts if you use them
 future: true
