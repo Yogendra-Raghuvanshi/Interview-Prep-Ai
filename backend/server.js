@@ -1,19 +1,20 @@
 require("dotenv").config();
-console.log("🔑 GEMINI_API_KEY:", process.env.GEMINI_API_KEY ? "Loaded ✅" : "Not Loaded ❌");
+console.log(
+  "🔑 GEMINI_API_KEY:",
+  process.env.GEMINI_API_KEY ? "Loaded ✅" : "Not Loaded ❌"
+);
 
-const  express=require ("express");
+const express = require("express");
 const cors = require("cors");
-const path = require("path"); 
+const path = require("path");
 const connectDB = require("./config/db");
 
-const authRoutes =require("./routes/authRoutes.js")
-const sessionRoutes =require( "./routes/sessionRoutes.js");
-const questionRoutes =require("./routes/questionRoutes.js");
+const authRoutes = require("./routes/authRoutes.js");
+const sessionRoutes = require("./routes/sessionRoutes.js");
+const questionRoutes = require("./routes/questionRoutes.js");
 
-const { protect } =require("./middlewares/authMiddleware.js");
+const { protect } = require("./middlewares/authMiddleware.js");
 const { generateInterviewQuestions, generateConceptExplanation } = require("./controllers/aiController");
-
-
 
 const app = express();
 
@@ -39,12 +40,21 @@ app.use("/api/questions", questionRoutes);
 app.post("/api/ai/generate-questions", protect, generateInterviewQuestions);
 app.post("/api/ai/generate-explanations", protect, generateConceptExplanation);
 
-
-
 // Serve uploads folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Start Server
+// ===== Add root and health routes =====
 
+// Root route (browser friendly)
+app.get("/", (req, res) => {
+  res.send("Backend is running! ✅");
+});
+
+// Health check route (Render health check)
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
+// Start Server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(` Server is running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
