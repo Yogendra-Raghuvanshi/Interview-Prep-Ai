@@ -11,7 +11,7 @@ async function run() {
     const result = await model.generateContent("Hello Gemini");
     console.log(result.response.text());
   } catch (err) {
-    console.error("❌ Gemini API Error:", err);
+    console.error(" Gemini API Error:", err);
   }
 }
 
