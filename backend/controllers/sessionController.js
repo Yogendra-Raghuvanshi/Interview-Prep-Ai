@@ -29,6 +29,11 @@ const createSession = async (req, res) => {
                 return question._id;
             })
     );
+
+    session.questions = questionDocs;
+    await session.save();
+    
+    res.status(201).json({ success: true, session });
     } catch (error) {
         res.status(500).json({success: false, message: "Server error" });
     }
@@ -67,3 +72,5 @@ const deleteSession = async (req, res) => {
         res.status(500).json({success: false, message: "Server error" });
     }
 };
+
+module.exports = { createSession, getSessionsById, getMySession, deleteSession};
