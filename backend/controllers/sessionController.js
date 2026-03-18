@@ -6,37 +6,53 @@ const Question = require("../models/Question");
 //@access Private
 const createSession = async (req, res) => {
     try {
-     const { role, experience, topicToFocus, description, questions} =
-        req.body;
-       const userId = req.user._id;
+         console.log("BODY:", req.body);  
+        console.log("USER:", req.user);   
+        const { role, experience, topicsToFocus, description, questions } = req.body;
 
-    // Create a new session
-    const session = await Session.create({
-        user: userId,
-        role,
-        experience,
-        topicToFocus,
-        description,
-    });
+        // ✅ fix 1: check user
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
 
-    const questionDocs = await Promise.all(
-           questions.map(async (q) => {
-                const question = await Question.create({
+        const userId = req.user._id;
+
+        // ✅ fix 2: default questions
+        const safeQuestions = questions || [];
+
+        // Create session
+        const session = await Session.create({
+            user: userId,
+            role,
+            experience,
+            topicsToFocus,
+            description,
+        });
+
+        // Create questions
+        const questionDocs = await Promise.all(
+            safeQuestions.map((q) => {
+                return Question.create({
                     session: session._id,
                     question: q.question,
                     answer: q.answer,
                 });
-                return question._id;
             })
-    );
+        );
 
-    session.questions = questionDocs;
-    await session.save();
-    
-    res.status(201).json({ success: true, session });
+        // Save question IDs
+        session.questions = questionDocs.map(q => q._id);
+        await session.save();
+
+        res.status(201).json({ success: true, session });
+
     } catch (error) {
-        res.status(500).json({success: false, message: "Server error" });
-    }
+    console.log("ERROR:", error);   // 👈 यह add करो
+    res.status(500).json({
+        success: false,
+        message: error.message     // 👈 यह भी change करो
+    });
+}
 };
 
 
@@ -45,7 +61,10 @@ const createSession = async (req, res) => {
 //@access Private
 const getMySession = async (req, res) => {
      try {
-
+ const  sessions = await Session.find({ user: req.user._id })
+ .sort({ createdAt: -1 })
+ .populate("questions");
+ res.status(200).json({ sessions });
     }catch (error) {
         res.status(500).json({success: false, message: "Server error" });
     }
