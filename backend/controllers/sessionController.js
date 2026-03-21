@@ -75,7 +75,16 @@ const getMySession = async (req, res) => {
 //@access Private
 const getSessionsById = async (req, res) => {
      try {
-
+       const session = await Session.findById(req.params.id)
+       .populate({
+        path: "questions",
+        options: { sort: { isPinned: -1, createdAt: -1 }},
+       })
+       .exec();
+       if(!session) {
+        return res.status(404).json({ success: false, message: "Session not found" });
+       }
+       res.status(200).json({ success: true, session });   
     }catch (error) {
         res.status(500).json({success: false, message: "Server error" });
     }
@@ -85,10 +94,30 @@ const getSessionsById = async (req, res) => {
 //@route DELETE /api/sessions/:id
 //@access Private
 const deleteSession = async (req, res) => {
-     try {
+    try {
+        const session = await Session.findById(req.params.id);
 
-    }catch (error) {
-        res.status(500).json({success: false, message: "Server error" });
+        if (!session) {
+            return res.status(404).json({ message: "Session not found" });
+        }
+
+        // ✅ FIXED LINE
+        if (session.user.toString() !== req.user._id.toString()) {
+            return res
+                .status(401)
+                .json({ message: "Not authorized to delete this session" });
+        }
+
+        // Delete related questions
+        await Question.deleteMany({ session: session._id });
+
+        // Delete session
+        await session.deleteOne();
+
+        res.status(200).json({ message: "Session deleted successfully" });
+
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Server error" });
     }
 };
 
