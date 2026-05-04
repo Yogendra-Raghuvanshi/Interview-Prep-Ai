@@ -1,54 +1,85 @@
-// const { GoogleGenAI } = require("google/genai");
-// const { conceptExplanationPrompt} = require("../utils/prompts");
+ const { GoogleGenAI } = require("@google/genai");
+const { conceptExplanationPrompt, questionAnswerPrompt} = require("../utils/prompts");
 
-// const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY});
+ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY});
 
-// //@desc Generate interview questions using AI
-// //@route POST /api/ai/generate-questions
-// //@access Private
-// const generateInterviewQuestions = async (req, res) => {
-//     try {
-//         const { role, experience, topicsToFocus, numberOfQuestions } = req.body;
+//@desc Generate interview questions using AI
+//@route POST /api/ai/generate-questions
+//@access Private
+const generateInterviewQuestions = async (req, res) => {
+    try {
+        const { role, experience, topicsToFocus, numberOfQuestions } = req.body;
 
-//         if (!role || !experience || !topicsToFocus || !numberOfQuestions) {
-//             return res.status(400).json({
-//                 message: "All fields are required"
-//             });
-//         }
+        if (!role || !experience || !topicsToFocus || !numberOfQuestions) {
+            return res.status(400).json({
+                message: "All fields are required"
+            });
+        }
 
-//         const prompt = questionAnswerPrompt(role, experience, topicsToFocus, numberOfQuestions);
+        const prompt = questionAnswerPrompt(role, experience, topicsToFocus, numberOfQuestions);
 
-//         const response = await ai.models.generateContent({
-//             model: "gemini-2.0-flash-lite",
-//             contents: prompt, 
-//         });
+        const response = await ai.models.generateContent({
+            model: "gemini-2.0-flash-lite",
+            contents: prompt, 
+        });
 
-//         let rawText = response.candidates[0].content.parts[0].text; 
+        let rawText = response.candidates[0].content.parts[0].text; 
 
-//         const cleanedText = rawText
-//             .replace(/^```json\s*/, "")
-//             .replace(/```$/, "")
-//             .trim();
+        const cleanedText = rawText
+            .replace(/^```json\s*/, "")
+            .replace(/```$/, "")
+            .trim();
 
-//         const data = JSON.parse(cleanedText);
+        const data = JSON.parse(cleanedText);
 
-//         res.status(200).json(data);
+        res.status(200).json(data);
 
-//     } catch (error) {
-//         res.status(500).json({
-//             message: "Failed to generate questions",
-//             error: error.message,
-//         });
-//     }
-// };
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to generate questions",
+            error: error.message,
+        });
+    }
+};
      
-// //@desc Generate explainatios a interivew question using AI
-// //@route POST /api/ai/generate-explanations
-// //@access Private
-// const generateConceptExplanation = async (req, res) => {
-// };
+//@desc Generate explainatios a interivew question using AI
+//@route POST /api/ai/generate-explanations
+//@access Private
+const generateConceptExplanation = async (req, res) => {
+    try{
+          const { question } = req.body;
 
-// module.exports = {
-//     generateInterviewQuestions,
-//     generateConceptExplanation,
-// };
+          if(!question){
+            return res.status(400).json({
+                message: "Missing feilds is required"
+            });
+          }
+          const prompt = conceptExplainPrompt(question);
+
+          const  response = await ai.models.generateContent({
+            model: "gemini-2.0-flash-lite",
+            contents: prompt,
+          });
+
+            let rawText = response.text;
+            
+            const cleanedText = rawText
+            .replace(/^```json\s*/, "")
+            .replace(/```$/, "")
+            .trim();
+
+            const data = JSON.parse(cleanedText);
+            
+            res.status(200).json(data);
+    }catch(error){
+        res.status(500).json({
+            message: "Failed to generate questions",
+            error: error.message,
+        });
+    }
+};
+
+module.exports = {
+    generateInterviewQuestions,
+    generateConceptExplanation,
+};
