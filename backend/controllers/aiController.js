@@ -1,11 +1,15 @@
- const { GoogleGenAI } = require("@google/genai");
-const { conceptExplanationPrompt, questionAnswerPrompt} = require("../utils/prompts");
+const { GoogleGenAI } = require("@google/genai");
+const { conceptExplanationPrompt, questionAnswerPrompt } = require("../utils/prompts");
 
- const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY});
+// ✅ ADD THIS (fallback)
+const fallbackQuestions = require("../utils/fallbackQuestions");
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 
 //@desc Generate interview questions using AI
 //@route POST /api/ai/generate-questions
 //@access Private
+// ✅ FIX: wrap in function
 const generateInterviewQuestions = async (req, res) => {
     try {
         const { role, experience, topicsToFocus, numberOfQuestions } = req.body;
@@ -16,14 +20,19 @@ const generateInterviewQuestions = async (req, res) => {
             });
         }
 
-        const prompt = questionAnswerPrompt(role, experience, topicsToFocus, numberOfQuestions);
+        const prompt = questionAnswerPrompt(
+            role,
+            experience,
+            topicsToFocus,
+            numberOfQuestions
+        );
 
         const response = await ai.models.generateContent({
             model: "gemini-2.0-flash-lite",
-            contents: prompt, 
+            contents: prompt,
         });
 
-        let rawText = response.candidates[0].content.parts[0].text; 
+        let rawText = response.candidates[0].content.parts[0].text;
 
         const cleanedText = rawText
             .replace(/^```json\s*/, "")
@@ -32,53 +41,82 @@ const generateInterviewQuestions = async (req, res) => {
 
         const data = JSON.parse(cleanedText);
 
-        res.status(200).json(data);
+        return res.status(200).json({
+            source: "ai",
+            data
+        });
 
     } catch (error) {
-        res.status(500).json({
-            message: "Failed to generate questions",
-            error: error.message,
+        console.error("AI ERROR:", error.message);
+
+        // 🔥 ADD FALLBACK HERE
+        const { role, topicsToFocus, numberOfQuestions } = req.body;
+
+        const fallback = fallbackQuestions(
+            role,
+            topicsToFocus,
+            numberOfQuestions || 5
+        );
+
+        return res.status(200).json({
+            source: "fallback",
+            data: fallback
         });
     }
 };
-     
-//@desc Generate explainatios a interivew question using AI
+
+
+
+//@desc Generate explanations for an interview question using AI
 //@route POST /api/ai/generate-explanations
 //@access Private
 const generateConceptExplanation = async (req, res) => {
-    try{
-          const { question } = req.body;
+    try {
+        const { question } = req.body;
 
-          if(!question){
+        if (!question) {
             return res.status(400).json({
-                message: "Missing feilds is required"
+                message: "Question is required"
             });
-          }
-          const prompt = conceptExplainPrompt(question);
+        }
 
-          const  response = await ai.models.generateContent({
+        // ❌ FIX TYPO HERE
+        const prompt = conceptExplanationPrompt(question);
+
+        const response = await ai.models.generateContent({
             model: "gemini-2.0-flash-lite",
             contents: prompt,
-          });
+        });
 
-            let rawText = response.text;
-            
-            const cleanedText = rawText
+        let rawText = response.candidates[0].content.parts[0].text;
+
+        const cleanedText = rawText
             .replace(/^```json\s*/, "")
             .replace(/```$/, "")
             .trim();
 
-            const data = JSON.parse(cleanedText);
-            
-            res.status(200).json(data);
-    }catch(error){
-        res.status(500).json({
-            message: "Failed to generate questions",
-            error: error.message,
+        const data = JSON.parse(cleanedText);
+
+        return res.status(200).json({
+            source: "ai",
+            data
+        });
+
+    } catch (error) {
+        console.error("AI ERROR:", error.message);
+
+        // 🔥 SIMPLE FALLBACK FOR EXPLANATION
+        return res.status(200).json({
+            source: "fallback",
+            data: {
+                explanation: "Unable to fetch AI explanation right now. Please try again later."
+            }
         });
     }
 };
 
+
+// ✅ EXPORT FIXED
 module.exports = {
     generateInterviewQuestions,
     generateConceptExplanation,

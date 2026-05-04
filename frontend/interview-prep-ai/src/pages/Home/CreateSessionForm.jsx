@@ -16,6 +16,9 @@ const CreateSessionForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // ✅ OPTIONAL (for better UI instead of alert)
+  const [isFallback, setIsFallback] = useState(false);
+
   const navigate = useNavigate();
 
   const handleChange = (key, value) => {
@@ -39,20 +42,29 @@ const CreateSessionForm = () => {
     setIsLoading(true);
 
     try {
-      // Call AI API to generate questions
+      // ✅ Call AI API
       const aiResponse = await axiosInstance.post(
         API_PATHS.AI.GENERATE_QUESTIONS,
         {
           role,
           experience,
           topicsToFocus,
-          numberOfQuestions: 10,   // ✅ fixed spelling
+          numberOfQuestions: 10,
         }
       );
 
-      // Expecting array like [{question, answer}, ...]
-      const generatedQuestions = aiResponse.data;
+      // 🔥 FIX 1: detect fallback
+      if (aiResponse.data.source === "fallback") {
+        alert("⚠ Using fallback questions (AI limit reached)");
+        setIsFallback(true);
+      } else {
+        setIsFallback(false);
+      }
 
+      // 🔥 FIX 2: correct data extraction
+      const generatedQuestions = aiResponse.data.data;
+
+      // ✅ Create session
       const response = await axiosInstance.post(
         API_PATHS.SESSION.CREATE,
         {
@@ -64,6 +76,7 @@ const CreateSessionForm = () => {
       if (response.data?.session?._id) {
         navigate(`/interview-prep/${response.data.session._id}`);
       }
+
     } catch (error) {
       if (error.response && error.response.data.message) {
         setError(error.response.data.message);
@@ -120,6 +133,13 @@ const CreateSessionForm = () => {
 
         {error && <p className="text-red-500 text-xs pb-2.5">{error}</p>}
 
+        {/* ✅ OPTIONAL UI instead of alert */}
+        {isFallback && (
+          <p className="text-orange-500 text-xs">
+            ⚠ Showing fallback questions (AI limit reached)
+          </p>
+        )}
+
         <button 
           type="submit"
           className="btn-primary w-full mt-2 flex justify-center items-center gap-2"
@@ -133,4 +153,4 @@ const CreateSessionForm = () => {
   )
 }
 
-export default CreateSessionForm
+export default CreateSessionForm;
